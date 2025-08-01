@@ -1,21 +1,6 @@
 {
-  "hosting": {
-    "site": "waveforum-56a36-5c327",
-    "public": "out",
-    "ignore": [
-      "firebase.json",
-      "**/.*",
-      "**/node_modules/**"
-    ],
-    "rewrites": [
-      {
-        "source": "**",
-        "destination": "/index.html"
-      }
-    ]
-  },
   "apphosting": {
-    "backendId": "waveforum-admin-backend",
+    "backendId": "waveform-backend",
     "rootDir": "/",
     "ignore": [
       "node_modules",
