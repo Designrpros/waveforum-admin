@@ -1,4 +1,4 @@
-// src/lib/firebase.js
+// src/lib/firebase.ts
 
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
@@ -9,25 +9,23 @@ import { getAnalytics } from "firebase/analytics";
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-  apiKey: "AIzaSyAKMhmjQ2wqetjMHE5AWWa1t1-BYnkqs_k",
-  authDomain: "waveforum-56a36.firebaseapp.com",
-  projectId: "waveforum-56a36",
-  storageBucket: "waveforum-56a36.firebasestorage.app",
-  messagingSenderId: "1212889640",
-  appId: "1:1212889640:web:18726d7902c7671ce2931d",
-  measurementId: "G-CNQEM5G79T"
+  apiKey: "AIzaSyBB6iYnZPhLS4bQcblIoCnwEECCmcsUAxk",
+  authDomain: "waveform-d0bf6.firebaseapp.com",
+  projectId: "waveform-d0bf6",
+  storageBucket: "waveform-d0bf6.firebasestorage.app",
+  messagingSenderId: "674358758887",
+  appId: "1:674358758887:web:2d7c311c03466f34e88142",
+  measurementId: "G-ZHJXSM8LFW"
 };
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
-// Initialize Analytics (optional, only if you plan to use Firebase Analytics)
-// You might want to wrap this in an if (typeof window !== 'undefined') check
-// if you're getting issues with Next.js server-side rendering
+// Initialize Analytics only on the client-side to prevent server-side errors
 let analytics;
-if (typeof window !== 'undefined') { // <--- ADD THIS CHECK
+if (typeof window !== 'undefined') {
   analytics = getAnalytics(app);
 }
 
-// Export the initialized app instance for use in other files
+// Export the initialized app and analytics instances
 export { app, analytics };
