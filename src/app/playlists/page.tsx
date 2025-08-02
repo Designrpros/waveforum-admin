@@ -100,8 +100,8 @@ const AdminPlaylistsPage: NextPage = () => {
     setStatus('loading');
     try {
       const idToken = await user.getIdToken();
-      // This endpoint fetches playlists for the currently logged-in user (the admin)
-      const response = await fetch('http://51.175.105.40:8080/api/playlists', {
+      // CORRECTED: Using environment variable for the API URL
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/playlists`, {
         headers: { 'Authorization': `Bearer ${idToken}` }
       });
       if (!response.ok) throw new Error('Failed to fetch playlists.');
@@ -130,7 +130,8 @@ const AdminPlaylistsPage: NextPage = () => {
 
     try {
       const idToken = await user.getIdToken();
-      const response = await fetch('http://51.175.105.40:8080/api/playlists', {
+      // CORRECTED: Using environment variable for the API URL
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/playlists`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${idToken}`,
