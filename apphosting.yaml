@@ -8,6 +8,8 @@ run:
 
 # This 'env' block will fix the error
 env:
+  - variable: NEXT_PUBLIC_API_BASE_URL
+    value: "http://51.175.105.40:8080/api"
   - variable: NEXT_PUBLIC_FIREBASE_API_KEY
     value: "AIzaSyBB6iYnZPhLS4bQcblIoCnwEECCmcsUAxk" # This is a public key, so it's safe here.
   - variable: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
