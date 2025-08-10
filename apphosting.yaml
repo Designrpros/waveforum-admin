@@ -9,18 +9,18 @@ run:
 # This 'env' block will fix the error
 env:
   - variable: NEXT_PUBLIC_API_BASE_URL
-    value: "https://api.waveform.ink/api"
+    value: "http://localhost:8080/api"
   - variable: NEXT_PUBLIC_FIREBASE_API_KEY
-    value: "AIzaSyBB6iYnZPhLS4bQcblIoCnwEECCmcsUAxk" # This is a public key, so it's safe here.
+    value: "AIzaSyCGgTC1XJ0S99chty2OCpbknoff-eZhgoM"
   - variable: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
-    value: "waveform-d0bf6.firebaseapp.com"
+    value: "waveforum-67377.firebaseapp.com"
   - variable: NEXT_PUBLIC_FIREBASE_PROJECT_ID
-    value: "waveform-d0bf6"
+    value: "waveforum-67377"
   - variable: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
-    value: "waveform-d0bf6.firebasestorage.app"
+    value: "waveforum-67377.firebasestorage.app"
   - variable: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
-    value: "674358758887"
+    value: "231572826848"
   - variable: NEXT_PUBLIC_FIREBASE_APP_ID
-    value: "1:674358758887:web:2d7c311c03466f34e88142"
+    value: "1:231572826848:web:3e3a8ee4a87c528be43e85"
   - variable: NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
-    value: "G-ZHJXSM8LFW"
+    value: "G-9SY3LKSPKJ"

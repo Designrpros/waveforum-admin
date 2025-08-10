@@ -4,12 +4,12 @@
 import type { NextPage } from 'next';
 import Head from 'next/head';
 import React, { useState, useEffect } from 'react';
-import styled, { useTheme } from 'styled-components';
+import styled, { useTheme, keyframes } from 'styled-components';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
 import {
   CheckCircle, XCircle, Loader, Music, Image as ImageIcon,
-  ChevronDown, ChevronRight, Play, Pause, Gavel, FileText, X, Edit
+  ChevronDown, ChevronRight, Play, Pause, Gavel, FileText, X, Edit, Fingerprint
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -33,6 +33,14 @@ interface Album {
   cc_type?: string;
   created_at: string;
   tracks: Track[];
+}
+
+interface MatchedSong {
+  id: number;
+  title: string;
+  artist: string;
+  filePath: string;
+  match_confidence: number;
 }
 
 // --- Styled Components (reusing from admin portal theme) ---
@@ -163,6 +171,7 @@ const TrackItem = styled.div`
   padding: 0.5rem 0;
   color: ${({ theme }) => theme.text};
   font-size: 0.9rem;
+  flex-wrap: wrap; // Allows content to wrap on smaller screens
 `;
 
 const AudioPlayerContainer = styled.div`
@@ -170,6 +179,7 @@ const AudioPlayerContainer = styled.div`
   align-items: center;
   gap: 0.5rem;
   margin-top: 0.5rem;
+  flex-grow: 1;
 
   audio {
     width: 100%;
@@ -328,6 +338,68 @@ const ConfirmRejectButton = styled(RejectButton)`
   /* Inherits styles from RejectButton */
 `;
 
+// NEW: Styles for the fingerprint search button and results
+const FingerprintButton = styled(Button)`
+  background-color: #6c757d; // Grey for non-primary action
+  color: white;
+  border: none;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  &:hover {
+    background-color: #5a6268;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+  }
+`;
+
+const MatchResultCard = styled.div`
+  background-color: #e2e3e5; // Light grey for the result card
+  color: #333;
+  border: 1px solid #ced4da;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+
+  &.success {
+    background-color: #d4edda;
+    border-color: #c3e6cb;
+    color: #155724;
+  }
+  &.error {
+    background-color: #f8d7da;
+    border-color: #f5c6cb;
+    color: #721c24;
+  }
+`;
+const ResultTitle = styled.h4`
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0;
+`;
+const ResultDetail = styled.p`
+  font-size: 0.9rem;
+  margin: 0;
+`;
+
+const Pulse = keyframes`
+  0% { opacity: 1; }
+  50% { opacity: 0.5; }
+  100% { opacity: 1; }
+`;
+const PulseLoader = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: ${({ theme }) => theme.subtleText};
+  font-size: 0.9rem;
+  
+  & svg {
+    animation: ${Pulse} 1s infinite;
+  }
+`;
+
 
 const PendingUploadsPage: NextPage = () => {
   const router = useRouter();
@@ -340,11 +412,15 @@ const PendingUploadsPage: NextPage = () => {
   const [expandedAlbumIds, setExpandedAlbumIds] = useState<Set<number>>(new Set());
   const [currentPlayingAudio, setCurrentPlayingAudio] = useState<HTMLAudioElement | null>(null);
   const [currentPlayingTrackId, setCurrentPlayingTrackId] = useState<number | null>(null);
+  const [actionLoading, setActionLoading] = useState(false);
 
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [albumToReject, setAlbumToReject] = useState<Album | null>(null);
   const [rejectionReason, setRejectionReason] = useState('');
-  const [actionLoading, setActionLoading] = useState(false);
+
+  // NEW: State for fingerprint search
+  const [fingerprintMatch, setFingerprintMatch] = useState<{ [key: number]: MatchedSong | null }>({});
+  const [fingerprintLoading, setFingerprintLoading] = useState<{ [key: number]: boolean }>({});
 
 
   const fetchPendingUploads = async () => {
@@ -421,6 +497,43 @@ const PendingUploadsPage: NextPage = () => {
       };
     }
   };
+
+  // NEW: Function to handle fingerprint search for a track
+  const handleFingerprintSearch = async (track: Track) => {
+    setFingerprintLoading(prev => ({ ...prev, [track.id]: true }));
+    setFingerprintMatch(prev => ({ ...prev, [track.id]: null })); // Clear previous match
+    try {
+      const audioUrl = track.audioPath;
+      const response = await fetch(audioUrl);
+      const audioBlob = await response.blob();
+      
+      const formData = new FormData();
+      formData.append('audio', audioBlob, `track-${track.id}.mp3`);
+      formData.append('excludeSongId', String(track.id)); // ADDED: Exclude the track being checked
+      
+      const searchResponse = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/songs/search`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (searchResponse.ok) {
+        const data = await searchResponse.json();
+        setFingerprintMatch(prev => ({ ...prev, [track.id]: data.match }));
+      } else if (searchResponse.status === 404) {
+         setFingerprintMatch(prev => ({ ...prev, [track.id]: null })); // Explicitly set to null for no match found
+      } else {
+        const errorData = await searchResponse.json();
+        throw new Error(errorData.message || 'Failed to perform fingerprint search.');
+      }
+    } catch (error) {
+      console.error('Fingerprint search error:', error);
+      alert('Error performing fingerprint search. See console for details.');
+      setFingerprintMatch(prev => ({ ...prev, [track.id]: null }));
+    } finally {
+      setFingerprintLoading(prev => ({ ...prev, [track.id]: false }));
+    }
+  };
+
 
   const handleApprove = async (albumId: number) => {
     if (!user || actionLoading) return;
@@ -551,6 +664,27 @@ const PendingUploadsPage: NextPage = () => {
                                 Your browser does not support the audio element.
                             </audio>
                         </AudioPlayerContainer>
+                        <FingerprintButton 
+                          onClick={() => handleFingerprintSearch(track)}
+                          disabled={fingerprintLoading[track.id]}
+                        >
+                          {fingerprintLoading[track.id] ? <Loader size={20} /> : <Fingerprint size={20} />}
+                        </FingerprintButton>
+
+                        {fingerprintMatch[track.id] !== undefined && (
+                          <MatchResultCard className={fingerprintMatch[track.id] ? 'success' : 'error'}>
+                            <ResultTitle>
+                              {fingerprintMatch[track.id] ? 'Match Found!' : 'No Match Found'}
+                            </ResultTitle>
+                            {fingerprintMatch[track.id] && (
+                              <>
+                                <ResultDetail>Title: {fingerprintMatch[track.id]?.title}</ResultDetail>
+                                <ResultDetail>Artist: {fingerprintMatch[track.id]?.artist}</ResultDetail>
+                                <ResultDetail>Confidence: {(fingerprintMatch[track.id]?.match_confidence! * 100).toFixed(2)}%</ResultDetail>
+                              </>
+                            )}
+                          </MatchResultCard>
+                        )}
                       </TrackItem>
                     ))
                   ) : (
@@ -559,7 +693,7 @@ const PendingUploadsPage: NextPage = () => {
                 </TrackList>
 
                 <ActionButtons>
-                  <EditLink href={`/edit-release/${album.id}`} $disabled={actionLoading}> {/* NEW EDIT BUTTON */}
+                  <EditLink href={`/edit-release/${album.id}`} $disabled={actionLoading}>
                     <Edit size={20} /> Edit
                   </EditLink>
                   <RejectButton onClick={() => handleRejectClick(album)} disabled={actionLoading}>
@@ -587,7 +721,7 @@ const PendingUploadsPage: NextPage = () => {
               />
               <ModalButtons>
                 <CancelButton onClick={() => setShowRejectModal(false)} disabled={actionLoading}>Cancel</CancelButton>
-                <ConfirmRejectButton onClick={handleConfirmReject} disabled={actionLoading || !rejectionReason.trim()}>
+                <ConfirmRejectButton onClick={() => handleConfirmReject()} disabled={actionLoading || !rejectionReason.trim()}>
                   {actionLoading ? <Loader size={20} style={{ animation: 'spin 1s linear infinite' }} /> : <Gavel size={20} />} Confirm Reject
                 </ConfirmRejectButton>
               </ModalButtons>
